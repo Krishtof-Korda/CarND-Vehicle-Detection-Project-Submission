@@ -1,9 +1,6 @@
-##Writeup Template
-###You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
+# Korda's Vehicle Detection Project 5 for Udacity Self-Driving Car Nanodegree
 
 ---
-
-**Vehicle Detection Project**
 
 The goals / steps of this project are the following:
 
@@ -30,7 +27,7 @@ The goals / steps of this project are the following:
 ---
 ###Writeup / README
 
-####1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  You can submit your writeup as markdown or pdf.  [Here](https://github.com/udacity/CarND-Vehicle-Detection/blob/master/writeup_template.md) is a template writeup for this project you can use as a guide and a starting point.  
+####1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  You can submit your writeup as markdown or pdf.
 
 You're reading it!
 
@@ -38,38 +35,46 @@ You're reading it!
 
 ####1. Explain how (and identify where in your code) you extracted HOG features from the training images.
 
-The code for this step is contained in the first code cell of the IPython notebook (or in lines # through # of the file called `some_file.py`).  
+The code for this step is contained in the fourth code cell of the IPython notebook.  
 
 I started by reading in all the `vehicle` and `non-vehicle` images.  Here is an example of one of each of the `vehicle` and `non-vehicle` classes:
 
 ![alt text][image1]
 
-I then explored different color spaces and different `skimage.hog()` parameters (`orientations`, `pixels_per_cell`, and `cells_per_block`).  I grabbed random images from each of the two classes and displayed them to get a feel for what the `skimage.hog()` output looks like.
+I then explored different color spaces (`LUV`, `HSV`, `YCrCb`, `RGB`) and different `skimage.hog()` parameters (`orientations`, `pixels_per_cell`, and `cells_per_block`). I found that HOGs were recognized best in the HSV color space. I also plotted the different color spaces in a 3D plot to see if I could find grouping of colors that might be useful to my classifier later.
 
-Here is an example using the `YCrCb` color space and HOG parameters of `orientations=8`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)`:
+Here is an example using the `HSV` color space and HOG parameters of `orientations=8`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)`:
 
 
 ![alt text][image2]
 
 ####2. Explain how you settled on your final choice of HOG parameters.
 
-I tried various combinations of parameters and...
+I began with the parameters set in class and started tweaking. First, I tried more pixels per cell `(16, 16)`. That actually made the HOGs less pronounced. Then, I tried reducing the cells per block to `(1, 1)`. That didn't seem to have much of an effect on the output.
+The most important choice I made was the `HSV` color space, it really made the vehicles pop in the histograms bining of color.
 
 ####3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
 
-I trained a linear SVM using...
+I began my search for the right classifier with the `LinearSVC` described in the lessons. Right our of the box without tuning any SVC parameters it worked fairly well, yielding 98.9% accuracy on a 20% test set. I wanted more but wasn't sure how much more I could get, so I started looking at other options. I tried SVC with an `rbf` kernel instead of `linear`. That seemed to take far too long to train with little added accuracy. So I went back to `linear` and did a `GridSearchCV` on the following tuning parameters:
+
+```tuned_parameters = [{'C': [1, 10, 100, 1000], 'kernel': ['linear']}, 
+                      {'C': [1, 10], 'gamma': [0.001, 0.0001], 'kernel': ['rbf']},]```
+                      
+I took hours but I felt like it was worth it to squeak out a few extra tenths of percent accuracy. I finally landed on `C=100` with a `linear` kernel. This kernel was 5 times faster than the `rbf`, and since we are processing vehicle images I wanted the fastest possible predicitons (they were still way too slow for real-world processing).
 
 ###Sliding Window Search
 
 ####1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
 
-I decided to search random window positions at random scales all over the image and came up with this (ok just kidding I didn't actually ;):
+I decided to use the HOG sub-sampling method talked about in the lessons (code cell 12). It seemed the most efficient way to search the image. This method extracts the HOG features once for the whole image and then a sliding window search it performed on a region of interest, `y=(390, 650)` to sample the HOG features. Then the corresponding image patch is sampled, spatially binned and color histogram binned before stacking together with the HOG features and fed into the `SVC` for prediction.
+
+Once predictions are made the coordinates of the window that was searched are stored in a `Box()` class if they were a match. Those coordinates were later used to add hot pixels to a heatmap.
 
 ![alt text][image3]
 
 ####2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?
 
-Ultimately I searched on two scales using YCrCb 3-channel HOG features plus spatially binned color and histograms of color in the feature vector, which provided a nice result.  Here are some example images:
+There were many optimizations and I spent far too long tweaking parameters. I ended up performing a sliding window search at 4 different scales while using HOG, color histogram, and spatial bin features. The overall accuracy of the `SVC` ended up being 99.07% which isn't too bad but still pops a lot of false positives. More on that later. Below are some examples of images of my pipeline running on test video.
 
 ![alt text][image4]
 ---
@@ -82,9 +87,13 @@ Here's a [link to my video result](./project_video.mp4)
 
 ####2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
 
-I recorded the positions of positive detections in each frame of the video.  From the positive detections I created a heatmap and then thresholded that map to identify vehicle positions.  I then used `scipy.ndimage.measurements.label()` to identify individual blobs in the heatmap.  I then assumed each blob corresponded to a vehicle.  I constructed bounding boxes to cover the area of each blob detected.  
+I recorded the positions of positive detections in each frame of the video.  From the positive detections I created a heatmap and then thresholded that map to identify vehicle positions.  I then used `scipy.ndimage.measurements.label()` to identify individual blobs in the heatmap.  I then assumed each blob corresponded to a vehicle.  I constructed bounding boxes to cover the area of each blob detected.
 
-Here's an example result showing the heatmap from a series of frames of video, the result of `scipy.ndimage.measurements.label()` and the bounding boxes then overlaid on the last frame of video:
+Inorder to trying to smooth out the jittery nature of the heatmap I implemented a method of keeping the previous heatmap and adding to it. I would start each new frame with the previous heatmap cooled off by -5 on every hot pixel. This kept some history of where the cars had been (like an infrared camera that sees where you have placed a hand on the wall). The -5 cooling of pixels insured the areas that didn't see any new detections would cool off and disappear. This served to stabilize the boxes somewhat.
+
+I tried for days to implement a good averaging scheme by storing the last 20 bounding boxes and keeping a moving average, but the labels would change between cars and it ended up averaging between the two cars.
+
+Here's an example result showing the heatmap from a series of frames of video and the bounding boxes then overlaid on the last frame of video with the result of `scipy.ndimage.measurements.label()` label over the top of the bounding boxes:
 
 ### Here are six frames and their corresponding heatmaps:
 
