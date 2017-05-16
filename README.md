@@ -40,10 +40,17 @@ I then explored different color spaces (`LUV`, `HSV`, `YCrCb`, `RGB`) and differ
 
 Here is an example using the `HSV` color space and HOG parameters of `orientations=8`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)`:
 
+#### Here is a HOG visulaization of a car image:
 
 ![alt text][2]
 
   [2]: ./output_images/carHOG.png
+  
+#### Here is a HOG visulaization of a non-car image (despite the title :-P):
+  
+![alt text][30]
+
+  [30]: ./output_images/notcarHOG.png
 
 #### 2. Explain how you settled on your final choice of HOG parameters.
 
