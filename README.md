@@ -15,7 +15,7 @@ The goals / steps of this project are the following:
 * Estimate a bounding box for vehicles detected.
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
-###Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
+### Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
 
 ---
 ### Writeup / README
@@ -26,7 +26,7 @@ You're reading it!
 
 ### Histogram of Oriented Gradients (HOG)
 
-####1. Explain how (and identify where in your code) you extracted HOG features from the training images.
+#### 1. Explain how (and identify where in your code) you extracted HOG features from the training images.
 
 The code for this step is contained in the fourth code cell of the IPython notebook.  
 
@@ -54,10 +54,12 @@ The most important choice I made was the `HSV` color space, it really made the v
 
 I began my search for the right classifier with the `LinearSVC` described in the lessons. Right our of the box without tuning any SVC parameters it worked fairly well, yielding 98.9% accuracy on a 20% test set. I wanted more but wasn't sure how much more I could get, so I started looking at other options. I tried SVC with an `rbf` kernel instead of `linear`. That seemed to take far too long to train with little added accuracy. So I went back to `linear` and did a `GridSearchCV` on the following tuning parameters:
 
-```tuned_parameters = [{'C': [1, 10, 100, 1000], 'kernel': ['linear']}, 
-                      {'C': [1, 10], 'gamma': [0.001, 0.0001], 'kernel': ['rbf']},]```
+```
+tuned_parameters = [{'C': [1, 10, 100, 1000], 'kernel': ['linear']}, 
+                      {'C': [1, 10], 'gamma': [0.001, 0.0001], 'kernel': ['rbf']},]
+```
                       
-I took hours but I felt like it was worth it to squeak out a few extra tenths of percent accuracy. I finally landed on `C=100` with a `linear` kernel. This kernel was 5 times faster than the `rbf`, and since we are processing vehicle images I wanted the fastest possible predicitons (they were still way too slow for real-world processing).
+It took hours but I felt like it was worth it to squeak out a few extra tenths of percent accuracy. I finally landed on `C=100` with a `linear` kernel. This kernel was 5 times faster than the `rbf`, and since we are processing vehicle images I wanted the fastest possible predicitons (they were still way too slow for real-world processing).
 
 ### Sliding Window Search
 
