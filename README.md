@@ -1,7 +1,7 @@
 # Korda's Vehicle Detection Project 5 for Udacity Self-Driving Car Nanodegree
 
 [YouTube Video](https://youtu.be/8hazstEff0o)
-[![alt text](./thumb1.png)](https://youtu.be/8hazstEff0o)
+[![alt text](./thumb1.PNG)](https://youtu.be/8hazstEff0o)
 
 ---
 
@@ -34,14 +34,16 @@ I started by reading in all the `vehicle` and `non-vehicle` images.  Here is an 
 
 ![alt text][1]
 
-  [1]: ./test_images/Original+Undistort2.png "Original and Undistorted Chessboard"
+  [1]: ./output_images/carnotcar.png 
 
 I then explored different color spaces (`LUV`, `HSV`, `YCrCb`, `RGB`) and different `skimage.hog()` parameters (`orientations`, `pixels_per_cell`, and `cells_per_block`). I found that HOGs were recognized best in the HSV color space. I also plotted the different color spaces in a 3D plot to see if I could find grouping of colors that might be useful to my classifier later.
 
 Here is an example using the `HSV` color space and HOG parameters of `orientations=8`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)`:
 
 
-![alt text][image2]
+![alt text][2]
+
+  [2]: ./output_images/carHOG.png
 
 #### 2. Explain how you settled on your final choice of HOG parameters.
 
@@ -63,15 +65,50 @@ I took hours but I felt like it was worth it to squeak out a few extra tenths of
 
 I decided to use the HOG sub-sampling method talked about in the lessons (code cell 12). It seemed the most efficient way to search the image. This method extracts the HOG features once for the whole image and then a sliding window search it performed on a region of interest, `y=(390, 650)` to sample the HOG features. Then the corresponding image patch is sampled, spatially binned and color histogram binned before stacking together with the HOG features and fed into the `SVC` for prediction.
 
+### Here is a sample of the features extracted as a signature:
+
+![alt text][24]
+
+  [24]: ./output_images/carrawnorm.png
+
 Once predictions are made the coordinates of the window that was searched are stored in a `Box()` class if they were a match. Those coordinates were later used to add hot pixels to a heatmap.
 
-![alt text][image3]
+### Here is the search area used:
+
+![alt text][3]
+
+  [3]: ./output_images/searcharea.png
+  
+### Here are the four scaled window sizes and the detections they picked up:
+  
+![alt text][20]
+
+  [20]: ./output_images/scaling0.png
+  
+![alt text][21]
+
+  [21]: ./output_images/scaling1.png
+  
+![alt text][22]
+
+  [22]: ./output_images/scaling2.png
+  
+![alt text][23]
+
+  [23]: ./output_images/scaling3.png
+  
 
 #### 2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?
 
 There were many optimizations and I spent far too long tweaking parameters. I ended up performing a sliding window search at 4 different scales while using HOG, color histogram, and spatial bin features. The overall accuracy of the `SVC` ended up being 99.07% which isn't too bad but still pops a lot of false positives. More on that later. Below are some examples of images of my pipeline running on test video.
 
-![alt text][image4]
+Here is a view of what the pipeline produces
+
+![alt text][4]
+
+  [4]: ./output_images/carsheatmap.png
+ 
+  
 ---
 
 ### Video Implementation
@@ -90,16 +127,31 @@ I tried for days to implement a good averaging scheme by storing the last 20 bou
 
 Here's an example result showing the heatmap from a series of frames of video and the bounding boxes then overlaid on the last frame of video with the result of `scipy.ndimage.measurements.label()` label over the top of the bounding boxes:
 
-### Here are six frames and their corresponding heatmaps:
+### Here are six frames and their corresponding heatmaps with labels and bounding boxes:
 
-![alt text][image5]
+![alt text][5]
 
-### Here is the output of `scipy.ndimage.measurements.label()` on the integrated heatmap from all six frames:
-![alt text][image6]
+  [5]: ./output_images/heatmapseq1.png
+  
+![alt text][6]
 
-### Here the resulting bounding boxes are drawn onto the last frame in the series:
-![alt text][image7]
+  [6]: ./output_images/heatmapseq2.png
+  
+![alt text][7]
 
+  [7]: ./output_images/heatmapseq3.png
+  
+![alt text][8]
+
+  [8]: ./output_images/heatmapseq4.png
+  
+![alt text][9]
+
+  [9]: ./output_images/heatmapseq5.png
+  
+![alt text][10]
+
+  [10]: ./output_images/heatmapseq6.png
 
 
 ---
